@@ -1,40 +1,78 @@
-const express = require("express");
-const cors = require("cors");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const pool = require("./db");
-require("dotenv").config();
+// Create database tables
+async function createTables() {
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static("public"));
-
-const PORT = process.env.PORT || 3000;
-
-// Home
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/public/index.html");
-});
-
-// Test database connection
-app.get("/api/test", async (req, res) => {
     try {
-        const result = await pool.query("SELECT NOW()");
-        res.json({
-            success: true,
-            time: result.rows[0].now
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({
-            success: false,
-            message: "Database connection failed"
-        });
-    }
-});
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+        await pool.query(`
+
+        CREATE TABLE IF NOT EXISTS students (
+
+            id SERIAL PRIMARY KEY,
+
+            fullname TEXT NOT NULL,
+
+            email TEXT UNIQUE NOT NULL,
+
+            password TEXT NOT NULL,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+        );
+
+        CREATE TABLE IF NOT EXISTS admins (
+
+            id SERIAL PRIMARY KEY,
+
+            username TEXT UNIQUE NOT NULL,
+
+            password TEXT NOT NULL
+
+        );
+
+        CREATE TABLE IF NOT EXISTS questions (
+
+            id SERIAL PRIMARY KEY,
+
+            subject TEXT,
+
+            question TEXT,
+
+            option_a TEXT,
+
+            option_b TEXT,
+
+            option_c TEXT,
+
+            option_d TEXT,
+
+            answer TEXT
+
+        );
+
+        CREATE TABLE IF NOT EXISTS results (
+
+            id SERIAL PRIMARY KEY,
+
+            student_email TEXT,
+
+            score INTEGER,
+
+            total INTEGER,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+        );
+
+        `);
+
+        console.log("✅ Database Ready");
+
+    } catch(err){
+
+        console.log(err);
+
+    }
+
+}
+
+createTables();
