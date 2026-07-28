@@ -76,3 +76,57 @@ async function createTables() {
 }
 
 createTables();
+
+// =============================
+// STUDENT REGISTRATION
+// =============================
+
+app.post("/api/register", async (req, res) => {
+
+    try {
+
+        const { fullname, email, password } = req.body;
+
+        if (!fullname || !email || !password) {
+            return res.json({
+                success: false,
+                message: "Fill all fields"
+            });
+        }
+
+        const check = await pool.query(
+            "SELECT * FROM students WHERE email=$1",
+            [email]
+        );
+
+        if (check.rows.length > 0) {
+            return res.json({
+                success: false,
+                message: "Email already exists"
+            });
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+
+        await pool.query(
+            "INSERT INTO students(fullname,email,password) VALUES($1,$2,$3)",
+            [fullname, email, hashed]
+        );
+
+        res.json({
+            success: true,
+            message: "Registration Successful"
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.json({
+            success: false,
+            message: "Server Error"
+        });
+
+    }
+
+});
