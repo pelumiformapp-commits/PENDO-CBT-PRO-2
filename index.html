@@ -1,1 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PĒÑDØ CBT PRO</title>
 
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- Loader -->
+<div id="loader">
+    <h1>PĒÑDØ CBT PRO</h1>
+</div>
+
+<!-- Navigation -->
+<nav>
+    <h2>PĒÑDØ CBT</h2>
+
+    <div>
+        <button onclick="showPage('home')">Home</button>
+        <button onclick="showPage('login')">Login</button>
+        <button onclick="showPage('register')">Register</button>
+    </div>
+</nav>
+
+<!-- HOME -->
+<section id="home" class="page">
+
+    <h1>Welcome to PĒÑDØ CBT PRO</h1>
+
+    <p>
+        A Professional Computer Based Testing Platform.
+    </p>
+
+    <button onclick="showPage('login')">
+        Get Started
+    </button>
+
+</section>
+
+<!-- LOGIN -->
+<section id="login" class="page">
+
+<h2>Student Login</h2>
+
+<input type="email" id="loginEmail" placeholder="Email">
+
+<input type="password" id="loginPassword" placeholder="Password">
+
+<button id="loginBtn">
+Login
+</button>
+
+<hr>
+
+<button onclick="showPage('adminLogin')">
+Admin Login
+</button>
+
+</section>
+
+<!-- REGISTER -->
+<section id="register" class="page">
+
+<h2>Create Account</h2>
+
+<input type="text" placeholder="Full Name">
+
+<input type="email" placeholder="Email">
+
+<input type="password" placeholder="Password">
+
+<button>
+Register
+</button>
+
+</section>
+
+<!-- STUDENT DASHBOARD -->
+<section id="dashboard" class="page">
+
+<h2>Student Dashboard</h2>
+
+<button>
+Start Exam
+</button>
+
+<button>
+Leaderboard
+</button>
+
+<button>
+Profile
+</button>
+
+<button>
+Logout
+</button>
+
+</section>
+
+<!-- EXAM -->
+<section id="exam" class="page">
+
+<h2>Exam Page</h2>
+
+<div id="timer">
+60:00
+</div>
+
+<div id="questionArea">
+
+Questions will appear here...
+
+</div>
+
+<button>
+Submit Exam
+</button>
+
+</section>
+
+<!-- RESULT -->
+<section id="result" class="page">
+
+<h2>Your Result</h2>
+
+<div id="score">
+0/0
+</div>
+
+</section>
+
+<!-- LEADERBOARD -->
+<section id="leaderboard" class="page">
+
+<h2>Leaderboard</h2>
+
+<div id="leaderboardList">
+
+No Record
+
+</div>
+
+</section>
+
+<!-- PROFILE -->
+<section id="profile" class="page">
+
+<h2>Student Profile</h2>
+
+</section>
+
+<!-- ADMIN LOGIN -->
+<section id="adminLogin" class="page">
+
+<h2>Admin Login</h2>
+
+<input type="text" placeholder="Username">
+
+<input type="password" placeholder="Password">
+
+<button>
+
+Login
+
+</button>
+
+</section>
+
+<!-- ADMIN DASHBOARD -->
+<section id="adminDashboard" class="page">
+
+<h2>Admin Dashboard</h2>
+
+<button>Add Question</button>
+
+<button>Import CSV</button>
+
+<button>Manage Students</button>
+
+<button>Results</button>
+
+<button>Leaderboard</button>
+
+<button>Logout</button>
+
+</section>
+
+<script src="app.js"></script>
+
+</body>
+      </html>
