@@ -144,17 +144,36 @@
     <button onclick="showPage('dashboard')">Back</button>
 </section>
 
-<!-- ADMIN LOGIN -->
-<section id="adminLogin" class="page">
-    <h2>Admin Login</h2>
+// ===========================
+// Admin Login
+// ===========================
+document.getElementById("adminLoginBtn")?.addEventListener("click", async ()=>{
+    const username = document.getElementById("adminUsername").value;
+    const password = document.getElementById("adminPassword").value;
 
-    <input type="text" id="adminUsername" placeholder="Username">
-    <input type="password" id="adminPassword" placeholder="Password">
+    if(username==="" || password===""){
+        alert("Enter Username and Password");
+        return;
+    }
 
-    <button id="adminLoginBtn">Login</button>
+    try {
+        const res = await fetch("/api/admin-login", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({username, password})
+        });
+        const data = await res.json();
 
-    <button onclick="showPage('login')">Back to Student Login</button>
-</section>
+        if(data.success){
+            alert("Admin Login Successful");
+            showPage("adminDashboard");
+        } else {
+            alert(data.message);
+        }
+    } catch(err){
+        alert("Server error — try again");
+    }
+});
 
 <!-- ADMIN DASHBOARD -->
 <section id="adminDashboard" class="page">
