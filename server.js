@@ -60,6 +60,30 @@ async function createTables() {
 createTables();
 
 // =============================
+// TEMPORARY: Auto-create/reset admin on startup (REMOVE AFTER USE)
+// =============================
+async function createTempAdmin() {
+    try {
+        const username = "pelumidayo43@gmail.com";
+        const password = "08142652094."; // change this before deploying
+        const hashed = await bcrypt.hash(password, 10);
+
+        const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
+
+        if (existing.rows.length > 0) {
+            await pool.query("UPDATE admins SET password=$1 WHERE username=$2", [hashed, username]);
+            console.log("✅ Temp admin password updated");
+        } else {
+            await pool.query("INSERT INTO admins(username, password) VALUES($1,$2)", [username, hashed]);
+            console.log("✅ Temp admin created");
+        }
+    } catch (err) {
+        console.log("❌ Temp admin setup failed:", err);
+    }
+}
+createTempAdmin();
+
+// =============================
 // STUDENT REGISTRATION
 // =============================
 app.post("/api/register", async (req, res) => {
@@ -134,40 +158,6 @@ app.post("/api/admin-login", async (req, res) => {
         }
 
         res.json({ success: true });
-    } catch (err) {
-        console.log(err);
-        res.json({ success: false, message: "Server Error" });
-    }
-});
-
-// =============================
-// TEMPORARY: Reset/Create Admin (REMOVE AFTER USE)
-// =============================
-app.post("/api/admin-setup-temp", async (req, res) => {
-    try {
-        const { username, password, secret } = req.body;
-
-        // Simple protection so randoms can't hit this
-        if (secret !== "myPendo735864Secret") {
-            return res.status(403).json({ success: false, message: "Forbidden" });
-        }
-
-        if (!username || !password) {
-            return res.json({ success: false, message: "Missing username or password" });
-        }
-
-        const hashed = await bcrypt.hash(password, 10);
-
-        // Update if exists, otherwise insert
-        const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
-
-        if (existing.rows.length > 0) {
-            await pool.query("UPDATE admins SET password=$1 WHERE username=$2", [hashed, username]);
-            return res.json({ success: true, message: "Admin password updated" });
-        } else {
-            await pool.query("INSERT INTO admins(username, password) VALUES($1,$2)", [username, hashed]);
-            return res.json({ success: true, message: "Admin created" });
-        }
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Server Error" });
