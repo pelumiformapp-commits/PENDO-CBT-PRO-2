@@ -300,5 +300,23 @@ app.get("/api/results/:email", async (req, res) => {
     }
 });
 
+// =============================
+// ADMIN: ALL RESULTS
+// =============================
+app.get("/api/results/all", async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT r.student_email, s.fullname, r.score, r.total, r.created_at
+            FROM results r
+            LEFT JOIN students s ON s.email = r.student_email
+            ORDER BY r.created_at DESC
+        `);
+        res.json({ success: true, results: result.rows });
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Server Error" });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
