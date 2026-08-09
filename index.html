@@ -28,169 +28,203 @@
 
 <!-- HOME -->
 <section id="home" class="page">
-
     <h1>Welcome to PĒÑDØ CBT PRO</h1>
-
-    <p>
-        A Professional Computer Based Testing Platform.
-    </p>
-
-    <button onclick="showPage('login')">
-        Get Started
-    </button>
-
+    <p>A Professional Computer Based Testing Platform.</p>
+    <button onclick="showPage('login')">Get Started</button>
 </section>
 
 <!-- LOGIN -->
 <section id="login" class="page">
+    <h2>Student Login</h2>
 
-<h2>Student Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
 
-<input type="email" id="loginEmail" placeholder="Email">
+    <button id="loginBtn">Login</button>
 
-<input type="password" id="loginPassword" placeholder="Password">
+    <p class="switch-link">No account? <a href="#" onclick="showPage('register')">Register here</a></p>
 
-<button id="loginBtn">
-Login
-</button>
+    <hr>
 
-<hr>
-
-<button onclick="showPage('adminLogin')">
-Admin Login
-</button>
-
+    <button onclick="showPage('adminLogin')">Admin Login</button>
 </section>
 
 <!-- REGISTER -->
 <section id="register" class="page">
+    <h2>Create Account</h2>
 
-<h2>Create Account</h2>
+    <input type="text" id="regFullname" placeholder="Full Name">
+    <input type="email" id="regEmail" placeholder="Email">
+    <input type="password" id="regPassword" placeholder="Password">
 
-<input type="text" placeholder="Full Name">
+    <button id="registerBtn">Register</button>
 
-<input type="email" placeholder="Email">
-
-<input type="password" placeholder="Password">
-
-<button>
-Register
-</button>
-
+    <p class="switch-link">Already have an account? <a href="#" onclick="showPage('login')">Login here</a></p>
 </section>
 
 <!-- STUDENT DASHBOARD -->
 <section id="dashboard" class="page">
+    <h2>Student Dashboard</h2>
+    <p>Welcome! Choose an option below to get started.</p>
 
-<h2>Student Dashboard</h2>
+    <button id="startExamBtn">Start Exam</button>
+    <button onclick="showPage('leaderboard')">Leaderboard</button>
+    <button onclick="showPage('profile')">Profile</button>
+    <button onclick="showPage('settings')">Settings</button>
+    <button onclick="logout()">Logout</button>
+</section>
 
-<button>
-Start Exam
-</button>
-
-<button>
-Leaderboard
-</button>
-
-<button>
-Profile
-</button>
-
-<button>
-Logout
-</button>
-
+<!-- EXAM SUBJECT SELECT -->
+<section id="subjectSelect" class="page">
+    <h2>Select Subject</h2>
+    <div id="subjectList">
+        <button onclick="startExam('Mathematics')">Mathematics</button>
+        <button onclick="startExam('English')">English</button>
+        <button onclick="startExam('Physics')">Physics</button>
+        <button onclick="startExam('Chemistry')">Chemistry</button>
+        <button onclick="startExam('Biology')">Biology</button>
+    </div>
+    <button onclick="showPage('dashboard')">Back</button>
 </section>
 
 <!-- EXAM -->
 <section id="exam" class="page">
+    <h2 id="examSubjectTitle">Exam Page</h2>
 
-<h2>Exam Page</h2>
+    <div id="timer">60:00</div>
 
-<div id="timer">
-60:00
-</div>
+    <div id="questionArea">
+        Questions will appear here...
+    </div>
 
-<div id="questionArea">
-
-Questions will appear here...
-
-</div>
-
-<button>
-Submit Exam
-</button>
-
+    <button id="submitExamBtn">Submit Exam</button>
 </section>
 
 <!-- RESULT -->
 <section id="result" class="page">
-
-<h2>Your Result</h2>
-
-<div id="score">
-0/0
-</div>
-
+    <h2>Your Result</h2>
+    <div id="score">0/0</div>
+    <button onclick="showPage('dashboard')">Back to Dashboard</button>
+    <button onclick="showPage('leaderboard')">View Leaderboard</button>
 </section>
 
 <!-- LEADERBOARD -->
 <section id="leaderboard" class="page">
-
-<h2>Leaderboard</h2>
-
-<div id="leaderboardList">
-
-No Record
-
-</div>
-
+    <h2>Leaderboard</h2>
+    <div id="leaderboardList">No Record</div>
+    <button onclick="showPage('dashboard')">Back</button>
 </section>
 
 <!-- PROFILE -->
 <section id="profile" class="page">
+    <h2>Student Profile</h2>
+    <div id="profileInfo">
+        <p><strong>Name:</strong> <span id="profileName">-</span></p>
+        <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+    </div>
+    <h3>My Results</h3>
+    <div id="myResultsList">No results yet</div>
+    <button onclick="showPage('dashboard')">Back</button>
+</section>
 
-<h2>Student Profile</h2>
+<!-- SETTINGS -->
+<section id="settings" class="page">
+    <h2>Settings</h2>
 
+    <div class="settings-row">
+        <label for="darkModeToggle">Dark Mode</label>
+        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+    </div>
+
+    <div class="settings-row">
+        <label for="soundToggle">Sound Alerts</label>
+        <input type="checkbox" id="soundToggle" onchange="toggleSound()">
+    </div>
+
+    <button onclick="showPage('dashboard')">Back</button>
 </section>
 
 <!-- ADMIN LOGIN -->
 <section id="adminLogin" class="page">
+    <h2>Admin Login</h2>
 
-<h2>Admin Login</h2>
+    <input type="text" id="adminUsername" placeholder="Username">
+    <input type="password" id="adminPassword" placeholder="Password">
 
-<input type="text" placeholder="Username">
+    <button id="adminLoginBtn">Login</button>
 
-<input type="password" placeholder="Password">
-
-<button>
-
-Login
-
-</button>
-
+    <button onclick="showPage('login')">Back to Student Login</button>
 </section>
 
 <!-- ADMIN DASHBOARD -->
 <section id="adminDashboard" class="page">
+    <h2>Admin Dashboard</h2>
 
-<h2>Admin Dashboard</h2>
+    <button onclick="showPage('addQuestion')">Add Question</button>
+    <button onclick="showPage('importQuestions')">Import CSV</button>
+    <button onclick="showPage('manageQuestions')">Manage Questions</button>
+    <button onclick="showPage('adminResults')">Results</button>
+    <button onclick="showPage('leaderboard')">Leaderboard</button>
+    <button onclick="logout()">Logout</button>
+</section>
 
-<button>Add Question</button>
+<!-- ADMIN: ADD QUESTION -->
+<section id="addQuestion" class="page">
+    <h2>Add New Question</h2>
 
-<button>Import CSV</button>
+    <input type="text" id="qSubject" placeholder="Subject (e.g. Mathematics)">
+    <textarea id="qText" placeholder="Question text"></textarea>
 
-<button>Manage Students</button>
+    <input type="text" id="qOptionA" placeholder="Option A">
+    <input type="text" id="qOptionB" placeholder="Option B">
+    <input type="text" id="qOptionC" placeholder="Option C">
+    <input type="text" id="qOptionD" placeholder="Option D">
 
-<button>Results</button>
+    <select id="qAnswer">
+        <option value="">Select correct answer</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+    </select>
 
-<button>Leaderboard</button>
+    <button id="addQuestionBtn">Save Question</button>
 
-<button>Logout</button>
+    <button onclick="showPage('adminDashboard')">Back</button>
+</section>
 
+<!-- ADMIN: IMPORT CSV -->
+<section id="importQuestions" class="page">
+    <h2>Import Questions from CSV</h2>
+
+    <p class="hint">
+        CSV format: subject,question,option_a,option_b,option_c,option_d,answer
+    </p>
+
+    <input type="file" id="csvFileInput" accept=".csv">
+
+    <button onclick="showPage('adminDashboard')">Back</button>
+</section>
+
+<!-- ADMIN: MANAGE QUESTIONS -->
+<section id="manageQuestions" class="page">
+    <h2>Manage Questions</h2>
+
+    <div id="questionsList">Loading...</div>
+
+    <button onclick="showPage('adminDashboard')">Back</button>
+</section>
+
+<!-- ADMIN: RESULTS -->
+<section id="adminResults" class="page">
+    <h2>All Student Results</h2>
+
+    <div id="adminResultsList">Loading...</div>
+
+    <button onclick="showPage('adminDashboard')">Back</button>
 </section>
 
 <script src="app.js"></script>
 
 </body>
-      </html>
+</html>
