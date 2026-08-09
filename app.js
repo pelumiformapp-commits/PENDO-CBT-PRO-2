@@ -16,6 +16,17 @@ window.onload=()=>{
         document.getElementById("loader").style.display="none";
         showPage("home");
     },1500);
+
+    const darkMode = localStorage.getItem("pendo_darkmode") === "true";
+    if(darkMode){
+        document.body.classList.add("dark-mode");
+        const toggle = document.getElementById("darkModeToggle");
+        if(toggle) toggle.checked = true;
+    }
+
+    const sound = localStorage.getItem("pendo_sound") === "true";
+    const soundToggle = document.getElementById("soundToggle");
+    if(soundToggle) soundToggle.checked = sound;
 };
 
 // ===========================
@@ -74,6 +85,8 @@ document.getElementById("loginBtn").addEventListener("click", async ()=>{
 
         if(data.success){
             currentStudent = { fullname: data.fullname, email: data.email };
+            document.getElementById("profileName").textContent = data.fullname;
+            document.getElementById("profileEmail").textContent = data.email;
             alert("Login Successful");
             showPage("dashboard");
         } else {
@@ -135,7 +148,7 @@ function logout(){
 let minutes=60;
 let seconds=0;
 let examQuestions = [];
-let studentAnswers = {};
+let currentSubject = "";
 
 function startTimer(){
     let timer=setInterval(()=>{
@@ -157,21 +170,28 @@ function startTimer(){
 }
 
 // ===========================
-// Start Exam — load real questions
+// Go to subject picker
 // ===========================
-document.querySelector("#dashboard button")
-.addEventListener("click", async ()=>{
+document.getElementById("startExamBtn")?.addEventListener("click", ()=>{
+    showPage("subjectSelect");
+});
+
+// ===========================
+// Start Exam for chosen subject
+// ===========================
+async function startExam(subject){
     try {
-        const res = await fetch("/api/questions");
+        const res = await fetch(`/api/questions?subject=${encodeURIComponent(subject)}`);
         const data = await res.json();
 
         if(!data.success || data.questions.length === 0){
-            alert("No questions available yet");
+            alert("No questions available for " + subject + " yet");
             return;
         }
 
         examQuestions = data.questions;
-        studentAnswers = {};
+        currentSubject = subject;
+        document.getElementById("examSubjectTitle").textContent = subject + " Exam";
         renderQuestions();
         showPage("exam");
         minutes = 60; seconds = 0;
@@ -179,7 +199,7 @@ document.querySelector("#dashboard button")
     } catch(err){
         alert("Could not load questions");
     }
-});
+}
 
 function renderQuestions(){
     const area = document.getElementById("questionArea");
@@ -233,7 +253,11 @@ async function submitExam(){
     showPage("result");
 }
 
-document.querySelector("#exam button")?.addEventListener("click", submitExam);
+document.getElementById("submitExamBtn")?.addEventListener("click", ()=>{
+    if(confirm("Submit exam now?")){
+        submitExam();
+    }
+});
 
 // ===========================
 // Leaderboard
@@ -260,6 +284,35 @@ async function loadLeaderboard(){
         `).join("");
     } catch(err){
         document.getElementById("leaderboardList").innerHTML = "Could not load leaderboard";
+    }
+}
+
+// ===========================
+// Profile: My Results
+// ===========================
+document.querySelector('button[onclick="showPage(\'profile\')"]')?.addEventListener("click", loadMyResults);
+
+async function loadMyResults(){
+    if(!currentStudent) return;
+
+    try {
+        const res = await fetch(`/api/results/${encodeURIComponent(currentStudent.email)}`);
+        const data = await res.json();
+        const list = document.getElementById("myResultsList");
+
+        if(!data.success || data.results.length === 0){
+            list.innerHTML = "No results yet";
+            return;
+        }
+
+        list.innerHTML = data.results.map(r=>`
+            <div class="result-row">
+                <span>${r.score}/${r.total}</span>
+                <span>${new Date(r.created_at).toLocaleDateString()}</span>
+            </div>
+        `).join("");
+    } catch(err){
+        document.getElementById("myResultsList").innerHTML = "Could not load results";
     }
 }
 
@@ -305,7 +358,7 @@ document.getElementById("addQuestionBtn")?.addEventListener("click", async ()=>{
 
 // ===========================
 // Admin: Publish/Import CSV Questions
-// CSV format expected: subject,question,option_a,option_b,option_c,option_d,answer
+// CSV format: subject,question,option_a,option_b,option_c,option_d,answer
 // ===========================
 document.getElementById("csvFileInput")?.addEventListener("change", (e)=>{
     const file = e.target.files[0];
@@ -357,7 +410,7 @@ async function loadAllQuestions(){
 
         list.innerHTML = data.questions.map(q=>`
             <div class="question-row">
-                <span>${q.subject}: ${q.question}</span>
+                <span>[${q.subject}] ${q.question}</span>
                 <button onclick="deleteQuestion(${q.id})">Delete</button>
             </div>
         `).join("");
@@ -380,6 +433,34 @@ async function deleteQuestion(id){
 }
 
 // ===========================
+// Admin: All Results
+// ===========================
+document.querySelector('button[onclick="showPage(\'adminResults\')"]')?.addEventListener("click", loadAdminResults);
+
+async function loadAdminResults(){
+    try {
+        const res = await fetch("/api/results/all");
+        const data = await res.json();
+        const list = document.getElementById("adminResultsList");
+
+        if(!data.success || data.results.length === 0){
+            list.innerHTML = "No results yet";
+            return;
+        }
+
+        list.innerHTML = data.results.map(r=>`
+            <div class="result-row">
+                <span>${r.fullname || r.student_email}</span>
+                <span>${r.score}/${r.total}</span>
+                <span>${new Date(r.created_at).toLocaleDateString()}</span>
+            </div>
+        `).join("");
+    } catch(err){
+        document.getElementById("adminResultsList").innerHTML = "Could not load results";
+    }
+}
+
+// ===========================
 // Settings
 // ===========================
 function toggleSound(){
@@ -392,15 +473,6 @@ function toggleDarkMode(){
     document.body.classList.toggle("dark-mode", enabled);
     localStorage.setItem("pendo_darkmode", enabled);
 }
-
-window.addEventListener("load", ()=>{
-    const darkMode = localStorage.getItem("pendo_darkmode") === "true";
-    if(darkMode){
-        document.body.classList.add("dark-mode");
-        const toggle = document.getElementById("darkModeToggle");
-        if(toggle) toggle.checked = true;
-    }
-});
 
 // ===========================
 // Anti Cheat
@@ -428,7 +500,7 @@ document.addEventListener("visibilitychange",()=>{
         warning++;
         alert("Warning "+warning+"/3\nDo not leave the exam tab.");
 
-        if(warning>=3){
+        if(warning>=2){
             alert("Exam Submitted Automatically");
             submitExam();
         }
