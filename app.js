@@ -66,7 +66,7 @@ document.getElementById("registerBtn")?.addEventListener("click", async ()=>{
 // ===========================
 let currentStudent = null;
 
-document.getElementById("loginBtn").addEventListener("click", async ()=>{
+document.getElementById("loginBtn")?.addEventListener("click", async ()=>{
     let email=document.getElementById("loginEmail").value;
     let password=document.getElementById("loginPassword").value;
 
@@ -193,6 +193,7 @@ document.getElementById("saveBulkBtn")?.addEventListener("click", async ()=>{
         alert("Import failed — try again");
     }
 });
+
 // ===========================
 // Logout
 // ===========================
