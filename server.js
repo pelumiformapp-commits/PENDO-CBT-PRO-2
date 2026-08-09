@@ -148,7 +148,7 @@ app.post("/api/admin-setup-temp", async (req, res) => {
         const { username, password, secret } = req.body;
 
         // Simple protection so randoms can't hit this
-        if (secret !== "735864") {
+        if (secret !== "myPendo735864Secret") {
             return res.status(403).json({ success: false, message: "Forbidden" });
         }
 
