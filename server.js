@@ -59,6 +59,73 @@ async function createTables() {
 }
 createTables();
 
+// Create/update database tables
+async function createTables() {
+    try {
+        await pool.query(`
+        CREATE TABLE IF NOT EXISTS students (
+            id SERIAL PRIMARY KEY,
+            fullname TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS admins (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS exams (
+            id SERIAL PRIMARY KEY,
+            subject TEXT NOT NULL,
+            title TEXT,
+            passing_score INTEGER DEFAULT 50,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS questions (
+            id SERIAL PRIMARY KEY,
+            subject TEXT,
+            question TEXT,
+            option_a TEXT,
+            option_b TEXT,
+            option_c TEXT,
+            option_d TEXT,
+            answer TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS results (
+            id SERIAL PRIMARY KEY,
+            student_email TEXT,
+            score INTEGER,
+            total INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Safely add new columns only if they don't already exist
+        ALTER TABLE questions ADD COLUMN IF NOT EXISTS exam_id INTEGER REFERENCES exams(id);
+
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS exam_id INTEGER REFERENCES exams(id);
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS correct_answers_count INTEGER;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS wrong_answers_count INTEGER;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS unattempted_questions_count INTEGER;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS accuracy_percentage NUMERIC;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS passing_status BOOLEAN;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS total_time_spent_seconds INTEGER;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS ip_address TEXT;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS device_user_agent TEXT;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS cheat_warnings_triggered INTEGER DEFAULT 0;
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS section_scores JSONB;
+        `);
+        console.log("✅ Database Ready");
+    } catch (err) {
+        console.log(err);
+    }
+}
+createTables();
+
 // =============================
 // TEMPORARY: Auto-create/reset admin on startup (REMOVE AFTER USE)
 // =============================
