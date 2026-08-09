@@ -144,36 +144,17 @@
     <button onclick="showPage('dashboard')">Back</button>
 </section>
 
-// ===========================
-// Admin Login
-// ===========================
-document.getElementById("adminLoginBtn")?.addEventListener("click", async ()=>{
-    const username = document.getElementById("adminUsername").value;
-    const password = document.getElementById("adminPassword").value;
+<!-- ADMIN LOGIN -->
+<section id="adminLogin" class="page">
+    <h2>Admin Login</h2>
 
-    if(username==="" || password===""){
-        alert("Enter Username and Password");
-        return;
-    }
+    <input type="text" id="adminUsername" placeholder="Username">
+    <input type="password" id="adminPassword" placeholder="Password">
 
-    try {
-        const res = await fetch("/api/admin-login", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({username, password})
-        });
-        const data = await res.json();
+    <button id="adminLoginBtn">Login</button>
 
-        if(data.success){
-            alert("Admin Login Successful");
-            showPage("adminDashboard");
-        } else {
-            alert(data.message);
-        }
-    } catch(err){
-        alert("Server error — try again");
-    }
-});
+    <button onclick="showPage('login')">Back to Student Login</button>
+</section>
 
 <!-- ADMIN DASHBOARD -->
 <section id="adminDashboard" class="page">
@@ -224,7 +205,7 @@ document.getElementById("adminLoginBtn")?.addEventListener("click", async ()=>{
 <section id="importQuestions" class="page">
     <h2>Bulk Import Questions</h2>
 
-    <select id="qSubject">
+    <select id="bulkSubject">
     <option value="">Select subject</option>
     <option value="Mathematics">Mathematics</option>
     <option value="English">English</option>
