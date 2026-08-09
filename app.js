@@ -299,15 +299,25 @@ async function startExam(subject){
 // ===========================
 async function submitExam(){
     let score = 0;
+    let correct = 0;
+    let wrong = 0;
+    let unattempted = 0;
 
     examQuestions.forEach(q=>{
         const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
-        if(selected && selected.value === q.answer){
+        if(!selected){
+            unattempted++;
+        } else if(selected.value === q.answer){
             score++;
+            correct++;
+        } else {
+            wrong++;
         }
     });
 
     document.getElementById("score").innerHTML = `${score}/${examQuestions.length}`;
+
+    const timeSpentSeconds = examStartTime ? Math.round((Date.now() - examStartTime) / 1000) : null;
 
     if(currentStudent){
         try {
@@ -317,7 +327,12 @@ async function submitExam(){
                 body: JSON.stringify({
                     student_email: currentStudent.email,
                     score,
-                    total: examQuestions.length
+                    total: examQuestions.length,
+                    correct_answers_count: correct,
+                    wrong_answers_count: wrong,
+                    unattempted_questions_count: unattempted,
+                    total_time_spent_seconds: timeSpentSeconds,
+                    cheat_warnings_triggered: warning
                 })
             });
         } catch(err){
