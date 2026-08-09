@@ -141,6 +141,40 @@ app.post("/api/admin-login", async (req, res) => {
 });
 
 // =============================
+// TEMPORARY: Reset/Create Admin (REMOVE AFTER USE)
+// =============================
+app.post("/api/admin-setup-temp", async (req, res) => {
+    try {
+        const { username, password, secret } = req.body;
+
+        // Simple protection so randoms can't hit this
+        if (secret !== "735864") {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
+
+        if (!username || !password) {
+            return res.json({ success: false, message: "Missing username or password" });
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+
+        // Update if exists, otherwise insert
+        const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
+
+        if (existing.rows.length > 0) {
+            await pool.query("UPDATE admins SET password=$1 WHERE username=$2", [hashed, username]);
+            return res.json({ success: true, message: "Admin password updated" });
+        } else {
+            await pool.query("INSERT INTO admins(username, password) VALUES($1,$2)", [username, hashed]);
+            return res.json({ success: true, message: "Admin created" });
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Server Error" });
+    }
+});
+
+// =============================
 // ADMIN: ADD SINGLE QUESTION
 // =============================
 app.post("/api/questions/add", async (req, res) => {
