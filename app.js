@@ -243,6 +243,7 @@ let minutes=60;
 let seconds=0;
 let examQuestions = [];
 let currentSubject = "";
+let examStartTime = null; // NEW
 
 function startTimer(){
     let timer=setInterval(()=>{
@@ -270,9 +271,6 @@ document.getElementById("startExamBtn")?.addEventListener("click", ()=>{
     showPage("subjectSelect");
 });
 
-// ===========================
-// Start Exam for chosen subject
-// ===========================
 async function startExam(subject){
     try {
         const res = await fetch(`/api/questions?subject=${encodeURIComponent(subject)}`);
@@ -285,6 +283,7 @@ async function startExam(subject){
 
         examQuestions = data.questions;
         currentSubject = subject;
+        examStartTime = Date.now(); // NEW
         document.getElementById("examSubjectTitle").textContent = subject + " Exam";
         renderQuestions();
         showPage("exam");
@@ -293,24 +292,6 @@ async function startExam(subject){
     } catch(err){
         alert("Could not load questions");
     }
-}
-
-function renderQuestions(){
-    const area = document.getElementById("questionArea");
-    area.innerHTML = "";
-
-    examQuestions.forEach((q, index)=>{
-        const block = document.createElement("div");
-        block.className = "question-block";
-        block.innerHTML = `
-            <p><strong>Q${index+1}:</strong> ${q.question}</p>
-            <label><input type="radio" name="q${q.id}" value="A"> ${q.option_a}</label><br>
-            <label><input type="radio" name="q${q.id}" value="B"> ${q.option_b}</label><br>
-            <label><input type="radio" name="q${q.id}" value="C"> ${q.option_c}</label><br>
-            <label><input type="radio" name="q${q.id}" value="D"> ${q.option_d}</label>
-        `;
-        area.appendChild(block);
-    });
 }
 
 // ===========================
