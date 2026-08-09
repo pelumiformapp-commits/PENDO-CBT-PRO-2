@@ -353,7 +353,6 @@ document.getElementById("submitExamBtn")?.addEventListener("click", ()=>{
 // Leaderboard
 // ===========================
 document.querySelector('button[onclick="showPage(\'leaderboard\')"]')?.addEventListener("click", loadLeaderboard);
-
 async function loadLeaderboard(){
     try {
         const res = await fetch("/api/leaderboard");
@@ -365,17 +364,19 @@ async function loadLeaderboard(){
             return;
         }
 
-        list.innerHTML = data.leaderboard.map((entry, i)=>`
+        list.innerHTML = data.leaderboard.map(entry=>`
             <div class="leaderboard-row">
-                <span>#${i+1}</span>
+                <span>#${entry.rank_position}</span>
                 <span>${entry.fullname || entry.student_email}</span>
-                <span>${entry.score}/${entry.total}</span>
+                <span>${entry.final_score}/${entry.total}</span>
+                <span>${entry.total_time_spent_seconds ? Math.floor(entry.total_time_spent_seconds/60)+"m "+(entry.total_time_spent_seconds%60)+"s" : "-"}</span>
             </div>
         `).join("");
     } catch(err){
         document.getElementById("leaderboardList").innerHTML = "Could not load leaderboard";
     }
 }
+
 
 // ===========================
 // Profile: My Results
@@ -526,10 +527,9 @@ async function deleteQuestion(id){
 // Admin: All Results
 // ===========================
 document.querySelector('button[onclick="showPage(\'adminResults\')"]')?.addEventListener("click", loadAdminResults);
-
 async function loadAdminResults(){
     try {
-        const res = await fetch("/api/results/all");
+        const res = await fetch("/api/results/export/all");
         const data = await res.json();
         const list = document.getElementById("adminResultsList");
 
@@ -540,9 +540,13 @@ async function loadAdminResults(){
 
         list.innerHTML = data.results.map(r=>`
             <div class="result-row">
-                <span>${r.fullname || r.student_email}</span>
+                <span>${r.candidate_email}</span>
                 <span>${r.score}/${r.total}</span>
-                <span>${new Date(r.created_at).toLocaleDateString()}</span>
+                <span>${r.accuracy_percentage ? r.accuracy_percentage + "%" : "-"}</span>
+                <span>${r.passing_status === true ? "Pass" : r.passing_status === false ? "Fail" : "-"}</span>
+                <span>${r.total_time_spent_seconds ? Math.floor(r.total_time_spent_seconds/60)+"m "+(r.total_time_spent_seconds%60)+"s" : "-"}</span>
+                <span>${r.cheat_warnings_triggered || 0} warnings</span>
+                <span>${new Date(r.submission_timestamp).toLocaleDateString()}</span>
             </div>
         `).join("");
     } catch(err){
