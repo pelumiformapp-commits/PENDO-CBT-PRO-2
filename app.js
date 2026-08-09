@@ -98,6 +98,37 @@ document.getElementById("loginBtn")?.addEventListener("click", async ()=>{
 });
 
 // ===========================
+// Admin Login
+// ===========================
+document.getElementById("adminLoginBtn")?.addEventListener("click", async ()=>{
+    const username = document.getElementById("adminUsername").value;
+    const password = document.getElementById("adminPassword").value;
+
+    if(username==="" || password===""){
+        alert("Enter Username and Password");
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/admin-login", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({username, password})
+        });
+        const data = await res.json();
+
+        if(data.success){
+            alert("Admin Login Successful");
+            showPage("adminDashboard");
+        } else {
+            alert(data.message);
+        }
+    } catch(err){
+        alert("Server error — try again");
+    }
+});
+
+// ===========================
 // Admin: Bulk Text Import
 // ===========================
 let parsedBulkQuestions = [];
