@@ -64,8 +64,14 @@ createTables();
 // =============================
 async function createTempAdmin() {
     try {
-        const username = "pelumidayo43@gmail.com";
-        const password = "735864"; // change this before deploying
+        const username = process.env.TEMP_ADMIN_USERNAME;
+        const password = process.env.TEMP_ADMIN_PASSWORD;
+
+        if (!username || !password) {
+            console.log("⚠️ TEMP_ADMIN_USERNAME or TEMP_ADMIN_PASSWORD not set, skipping temp admin setup");
+            return;
+        }
+
         const hashed = await bcrypt.hash(password, 10);
 
         const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
