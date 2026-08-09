@@ -15,51 +15,6 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Create database tables
-async function createTables() {
-    try {
-        await pool.query(`
-        CREATE TABLE IF NOT EXISTS students (
-            id SERIAL PRIMARY KEY,
-            fullname TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS admins (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS questions (
-            id SERIAL PRIMARY KEY,
-            subject TEXT,
-            question TEXT,
-            option_a TEXT,
-            option_b TEXT,
-            option_c TEXT,
-            option_d TEXT,
-            answer TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS results (
-            id SERIAL PRIMARY KEY,
-            student_email TEXT,
-            score INTEGER,
-            total INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        `);
-        console.log("✅ Database Ready");
-    } catch (err) {
-        console.log(err);
-    }
-}
-createTables();
-();
-
 // Create/update database tables
 async function createTables() {
     try {
@@ -121,7 +76,6 @@ async function createTables() {
         `);
         console.log("✅ Database Ready");
     } catch (err) {
-        // Ignore harmless race-condition errors from concurrent cold starts
         if (err.code === "23505") {
             console.log("ℹ️ Tables already being set up by another instance — skipping");
         } else {
@@ -132,7 +86,28 @@ async function createTables() {
 createTables();
 
 // =============================
-// TEMPORARY: Auto-create/reset admin on startup (REMOVE AFTER USE)
+// TEMPORARY: Auto-create/reset admin on startup (REMOVE WHEN NO LONGER NEEDED)
+// =============================
+async function createTempAdmin() {
+    try {
+        const username = "pelumidayo43@gmail.com";
+        const password = "735864";
+        const hashed = await bcrypt.hash(password, 10);
+
+        const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
+
+        if (existing.rows.length > 0) {
+            await pool.query("UPDATE admins SET password=$1 WHERE username=$2", [hashed, username]);
+            console.log("✅ Temp admin password updated");
+        } else {
+            await pool.query("INSERT INTO admins(username, password) VALUES($1,$2)", [username, hashed]);
+            console.log("✅ Temp admin created");
+        }
+    } catch (err) {
+        console.log("❌ Temp admin setup failed:", err);
+    }
+}
+createTempAdmin();
 
 // =============================
 // STUDENT REGISTRATION
@@ -209,6 +184,46 @@ app.post("/api/admin-login", async (req, res) => {
         }
 
         res.json({ success: true });
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Server Error" });
+    }
+});
+
+// =============================
+// ADMIN: DASHBOARD METRICS
+// =============================
+app.get("/api/admin/metrics", async (req, res) => {
+    try {
+        const totalCandidates = await pool.query("SELECT COUNT(*) FROM students");
+        const totalExams = await pool.query("SELECT COUNT(*) FROM exams");
+        const scoreStats = await pool.query(`
+            SELECT
+                AVG(accuracy_percentage) as avg_score,
+                MAX(accuracy_percentage) as highest_score,
+                MIN(accuracy_percentage) as lowest_score,
+                COUNT(*) as total_submissions,
+                SUM(CASE WHEN passing_status THEN 1 ELSE 0 END) as total_passed
+            FROM results
+        `);
+
+        const stats = scoreStats.rows[0];
+        const totalSubmissions = parseInt(stats.total_submissions) || 0;
+        const totalPassed = parseInt(stats.total_passed) || 0;
+
+        res.json({
+            success: true,
+            metrics: {
+                total_candidates: parseInt(totalCandidates.rows[0].count),
+                total_exams: parseInt(totalExams.rows[0].count),
+                average_score_percentage: parseFloat(stats.avg_score) || 0,
+                highest_score: parseFloat(stats.highest_score) || 0,
+                lowest_score: parseFloat(stats.lowest_score) || 0,
+                total_submissions: totalSubmissions,
+                pass_count: totalPassed,
+                fail_count: totalSubmissions - totalPassed
+            }
+        });
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Server Error" });
@@ -379,14 +394,30 @@ app.post("/api/results/submit", async (req, res) => {
 app.get("/api/leaderboard", async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT r.student_email, s.fullname, r.score, r.total, r.created_at
+            SELECT
+                s.id as student_id,
+                r.student_email,
+                s.fullname,
+                r.exam_id,
+                r.score as final_score,
+                r.correct_answers_count,
+                r.wrong_answers_count,
+                r.unattempted_questions_count,
+                r.total_time_spent_seconds,
+                r.total,
+                r.created_at as submission_timestamp
             FROM results r
             LEFT JOIN students s ON s.email = r.student_email
-            ORDER BY r.score DESC, r.created_at ASC
+            ORDER BY r.score DESC, r.total_time_spent_seconds ASC NULLS LAST, r.created_at ASC
             LIMIT 20
         `);
 
-        res.json({ success: true, leaderboard: result.rows });
+        const leaderboard = result.rows.map((row, index) => ({
+            rank_position: index + 1,
+            ...row
+        }));
+
+        res.json({ success: true, leaderboard });
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Server Error" });
@@ -410,39 +441,33 @@ app.get("/api/results/:email", async (req, res) => {
 });
 
 // =============================
-// ADMIN: DASHBOARD METRICS
+// ADMIN: FULL RESULTS EXPORT DATA
 // =============================
-app.get("/api/admin/metrics", async (req, res) => {
+app.get("/api/results/export/all", async (req, res) => {
     try {
-        const totalCandidates = await pool.query("SELECT COUNT(*) FROM students");
-        const totalExams = await pool.query("SELECT COUNT(*) FROM exams");
-        const scoreStats = await pool.query(`
+        const result = await pool.query(`
             SELECT
-                AVG(accuracy_percentage) as avg_score,
-                MAX(accuracy_percentage) as highest_score,
-                MIN(accuracy_percentage) as lowest_score,
-                COUNT(*) as total_submissions,
-                SUM(CASE WHEN passing_status THEN 1 ELSE 0 END) as total_passed
-            FROM results
+                r.id as result_id,
+                r.student_email as candidate_email,
+                r.exam_id,
+                r.score,
+                r.total,
+                r.correct_answers_count,
+                r.wrong_answers_count,
+                r.unattempted_questions_count,
+                r.accuracy_percentage,
+                r.passing_status,
+                r.total_time_spent_seconds,
+                r.ip_address,
+                r.device_user_agent,
+                r.cheat_warnings_triggered,
+                r.section_scores,
+                r.created_at as submission_timestamp
+            FROM results r
+            ORDER BY r.created_at DESC
         `);
 
-        const stats = scoreStats.rows[0];
-        const totalSubmissions = parseInt(stats.total_submissions) || 0;
-        const totalPassed = parseInt(stats.total_passed) || 0;
-
-        res.json({
-            success: true,
-            metrics: {
-                total_candidates: parseInt(totalCandidates.rows[0].count),
-                total_exams: parseInt(totalExams.rows[0].count),
-                average_score_percentage: parseFloat(stats.avg_score) || 0,
-                highest_score: parseFloat(stats.highest_score) || 0,
-                lowest_score: parseFloat(stats.lowest_score) || 0,
-                total_submissions: totalSubmissions,
-                pass_count: totalPassed,
-                fail_count: totalSubmissions - totalPassed
-            }
-        });
+        res.json({ success: true, results: result.rows });
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Server Error" });
@@ -450,7 +475,7 @@ app.get("/api/admin/metrics", async (req, res) => {
 });
 
 // =============================
-// ADMIN: ALL RESULTS
+// ADMIN: ALL RESULTS (legacy — kept until app.js fully migrated)
 // =============================
 app.get("/api/results/all", async (req, res) => {
     try {
