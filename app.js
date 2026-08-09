@@ -98,39 +98,101 @@ document.getElementById("loginBtn").addEventListener("click", async ()=>{
 });
 
 // ===========================
-// Admin Login (Real)
+// Admin: Bulk Text Import
 // ===========================
-let isAdmin = false;
+let parsedBulkQuestions = [];
 
-document.getElementById("adminLoginBtn")?.addEventListener("click", async ()=>{
-    const username = document.getElementById("adminUsername").value;
-    const password = document.getElementById("adminPassword").value;
+function parseBulkText(text){
+    const blocks = text.trim().split(/\n\s*\n/);
+    const questions = [];
 
-    if(!username || !password){
-        alert("Enter username and password");
+    blocks.forEach(block=>{
+        const lines = block.split("\n").map(l=>l.trim()).filter(l=>l!=="");
+        if(lines.length < 3) return;
+
+        let questionText = "";
+        const options = [];
+        let correctIndex = null;
+
+        lines.forEach(line=>{
+            if(/^Q\d*\.?\s*/i.test(line)){
+                questionText = line.replace(/^Q\d*\.?\s*/i, "").trim();
+            } else if(/^\*\d+/.test(line)){
+                correctIndex = parseInt(line.replace("*","").trim()) - 1;
+            } else if(/^\d+[\.\)]\s*/.test(line)){
+                options.push(line.replace(/^\d+[\.\)]\s*/, "").trim());
+            }
+        });
+
+        if(questionText && options.length >= 2 && correctIndex !== null){
+            const letters = ["A","B","C","D","E"];
+            questions.push({
+                question: questionText,
+                option_a: options[0] || "",
+                option_b: options[1] || "",
+                option_c: options[2] || "",
+                option_d: options[3] || "",
+                answer: letters[correctIndex] || "A"
+            });
+        }
+    });
+
+    return questions;
+}
+
+document.getElementById("previewBulkBtn")?.addEventListener("click", ()=>{
+    const subject = document.getElementById("bulkSubject").value.trim();
+    const text = document.getElementById("bulkPasteArea").value;
+
+    if(!subject){
+        alert("Select a subject first");
         return;
     }
 
-    try {
-        const res = await fetch("/api/admin-login", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({username, password})
-        });
-        const data = await res.json();
+    parsedBulkQuestions = parseBulkText(text).map(q => ({...q, subject}));
 
-        if(data.success){
-            isAdmin = true;
-            alert("Admin Login Successful");
-            showPage("adminDashboard");
-        } else {
-            alert(data.message);
-        }
-    } catch(err){
-        alert("Server error — try again");
+    const preview = document.getElementById("bulkPreviewArea");
+    if(parsedBulkQuestions.length === 0){
+        preview.innerHTML = "<p>No valid questions found. Check your format.</p>";
+        document.getElementById("saveBulkBtn").style.display = "none";
+        return;
     }
+
+    preview.innerHTML = `<p><strong>${parsedBulkQuestions.length} questions found:</strong></p>` +
+        parsedBulkQuestions.map((q,i)=>`
+            <div class="preview-block">
+                <p><strong>Q${i+1}:</strong> ${q.question}</p>
+                <p>A) ${q.option_a} | B) ${q.option_b} | C) ${q.option_c} | D) ${q.option_d}</p>
+                <p>Correct: ${q.answer}</p>
+            </div>
+        `).join("");
+
+    document.getElementById("saveBulkBtn").style.display = "block";
 });
 
+document.getElementById("saveBulkBtn")?.addEventListener("click", async ()=>{
+    if(parsedBulkQuestions.length === 0) return;
+
+    try {
+        const res = await fetch("/api/questions/import", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({rows: parsedBulkQuestions})
+        });
+        const data = await res.json();
+        alert(data.message);
+
+        if(data.success){
+            document.getElementById("bulkPasteArea").value = "";
+            document.getElementById("bulkSubject").value = "";
+            document.getElementById("bulkPreviewArea").innerHTML = "";
+            document.getElementById("saveBulkBtn").style.display = "none";
+            parsedBulkQuestions = [];
+        }
+    } catch(err){
+        alert("Import failed — try again");
+    }
+});
 // ===========================
 // Logout
 // ===========================
