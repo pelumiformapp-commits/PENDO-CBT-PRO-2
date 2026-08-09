@@ -172,7 +172,15 @@
 <section id="addQuestion" class="page">
     <h2>Add New Question</h2>
 
-    <input type="text" id="qSubject" placeholder="Subject (e.g. Mathematics)">
+    <select id="qSubject">
+        <option value="">Select subject</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="English">English</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Biology">Biology</option>
+    </select>
+
     <textarea id="qText" placeholder="Question text"></textarea>
 
     <input type="text" id="qOptionA" placeholder="Option A">
