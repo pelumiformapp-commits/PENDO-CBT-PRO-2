@@ -58,6 +58,7 @@ async function createTables() {
     }
 }
 createTables();
+();
 
 // Create/update database tables
 async function createTables() {
@@ -104,7 +105,6 @@ async function createTables() {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
-        -- Safely add new columns only if they don't already exist
         ALTER TABLE questions ADD COLUMN IF NOT EXISTS exam_id INTEGER REFERENCES exams(id);
 
         ALTER TABLE results ADD COLUMN IF NOT EXISTS exam_id INTEGER REFERENCES exams(id);
@@ -121,40 +121,18 @@ async function createTables() {
         `);
         console.log("✅ Database Ready");
     } catch (err) {
-        console.log(err);
+        // Ignore harmless race-condition errors from concurrent cold starts
+        if (err.code === "23505") {
+            console.log("ℹ️ Tables already being set up by another instance — skipping");
+        } else {
+            console.log("❌ Database setup error:", err);
+        }
     }
 }
 createTables();
 
 // =============================
 // TEMPORARY: Auto-create/reset admin on startup (REMOVE AFTER USE)
-// =============================
-async function createTempAdmin() {
-    try {
-        const username = process.env.TEMP_ADMIN_USERNAME;
-        const password = process.env.TEMP_ADMIN_PASSWORD;
-
-        if (!username || !password) {
-            console.log("⚠️ TEMP_ADMIN_USERNAME or TEMP_ADMIN_PASSWORD not set, skipping temp admin setup");
-            return;
-        }
-
-        const hashed = await bcrypt.hash(password, 10);
-
-        const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
-
-        if (existing.rows.length > 0) {
-            await pool.query("UPDATE admins SET password=$1 WHERE username=$2", [hashed, username]);
-            console.log("✅ Temp admin password updated");
-        } else {
-            await pool.query("INSERT INTO admins(username, password) VALUES($1,$2)", [username, hashed]);
-            console.log("✅ Temp admin created");
-        }
-    } catch (err) {
-        console.log("❌ Temp admin setup failed:", err);
-    }
-}
-createTempAdmin();
 
 // =============================
 // STUDENT REGISTRATION
