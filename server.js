@@ -321,15 +321,49 @@ app.delete("/api/questions/:id", async (req, res) => {
 // =============================
 app.post("/api/results/submit", async (req, res) => {
     try {
-        const { student_email, score, total } = req.body;
+        const {
+            student_email,
+            score,
+            total,
+            correct_answers_count,
+            wrong_answers_count,
+            unattempted_questions_count,
+            total_time_spent_seconds,
+            cheat_warnings_triggered,
+            exam_id,
+            section_scores
+        } = req.body;
 
         if (!student_email || score === undefined || !total) {
             return res.json({ success: false, message: "Missing result data" });
         }
 
+        const accuracy_percentage = total > 0 ? ((score / total) * 100).toFixed(2) : 0;
+        const passing_status = accuracy_percentage >= 50; // adjust threshold as needed
+        const ip_address = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+        const device_user_agent = req.headers["user-agent"];
+
         await pool.query(
-            "INSERT INTO results(student_email, score, total) VALUES($1,$2,$3)",
-            [student_email, score, total]
+            `INSERT INTO results(
+                student_email, score, total, correct_answers_count, wrong_answers_count,
+                unattempted_questions_count, accuracy_percentage, passing_status,
+                total_time_spent_seconds, ip_address, device_user_agent,
+                cheat_warnings_triggered, exam_id, section_scores
+            ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+            [
+                student_email, score, total,
+                correct_answers_count || score,
+                wrong_answers_count || (total - score),
+                unattempted_questions_count || 0,
+                accuracy_percentage,
+                passing_status,
+                total_time_spent_seconds || null,
+                ip_address,
+                device_user_agent,
+                cheat_warnings_triggered || 0,
+                exam_id || null,
+                section_scores ? JSON.stringify(section_scores) : null
+            ]
         );
 
         res.json({ success: true, message: "Result Saved" });
@@ -369,6 +403,46 @@ app.get("/api/results/:email", async (req, res) => {
             [req.params.email]
         );
         res.json({ success: true, results: result.rows });
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Server Error" });
+    }
+});
+
+// =============================
+// ADMIN: DASHBOARD METRICS
+// =============================
+app.get("/api/admin/metrics", async (req, res) => {
+    try {
+        const totalCandidates = await pool.query("SELECT COUNT(*) FROM students");
+        const totalExams = await pool.query("SELECT COUNT(*) FROM exams");
+        const scoreStats = await pool.query(`
+            SELECT
+                AVG(accuracy_percentage) as avg_score,
+                MAX(accuracy_percentage) as highest_score,
+                MIN(accuracy_percentage) as lowest_score,
+                COUNT(*) as total_submissions,
+                SUM(CASE WHEN passing_status THEN 1 ELSE 0 END) as total_passed
+            FROM results
+        `);
+
+        const stats = scoreStats.rows[0];
+        const totalSubmissions = parseInt(stats.total_submissions) || 0;
+        const totalPassed = parseInt(stats.total_passed) || 0;
+
+        res.json({
+            success: true,
+            metrics: {
+                total_candidates: parseInt(totalCandidates.rows[0].count),
+                total_exams: parseInt(totalExams.rows[0].count),
+                average_score_percentage: parseFloat(stats.avg_score) || 0,
+                highest_score: parseFloat(stats.highest_score) || 0,
+                lowest_score: parseFloat(stats.lowest_score) || 0,
+                total_submissions: totalSubmissions,
+                pass_count: totalPassed,
+                fail_count: totalSubmissions - totalPassed
+            }
+        });
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Server Error" });
