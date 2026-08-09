@@ -318,5 +318,28 @@ app.get("/api/results/all", async (req, res) => {
     }
 });
 
+// TEMPORARY: Create admin account via URL — REMOVE AFTER FIRST USE
+app.get("/api/create-admin", async (req, res) => {
+    try {
+        const { username, password } = req.query;
+
+        if (!username || !password) {
+            return res.send("Missing username or password in URL");
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+
+        await pool.query(
+            "INSERT INTO admins(username, password) VALUES($1,$2)",
+            [username, hashed]
+        );
+
+        res.send("✅ Admin created successfully: " + username);
+    } catch (err) {
+        console.log(err);
+        res.send("❌ Error: " + err.message);
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
