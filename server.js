@@ -65,7 +65,7 @@ createTables();
 async function createTempAdmin() {
     try {
         const username = "pelumidayo43@gmail.com";
-        const password = "08142652094."; // change this before deploying
+        const password = "735864"; // change this before deploying
         const hashed = await bcrypt.hash(password, 10);
 
         const existing = await pool.query("SELECT * FROM admins WHERE username=$1", [username]);
